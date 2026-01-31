@@ -29,7 +29,8 @@ body{
   justify-content:center;
   align-items:center;
   border-radius:8px;
-  font-size:26px;
+  font-weight:bold;
+  font-size:18px;
   cursor:pointer;
   user-select:none;
 }
@@ -109,19 +110,12 @@ function snakeNumber(row,col){
   return (row%2===0)? base+col+1 : base+(10-col);
 }
 
-function iconFor(num){
-  if(!effects[num]) return "";
-  if(effects[num].type==="plus") return "➕";
-  if(effects[num].type==="minus") return "➖";
-  if(effects[num].type==="give") return "🎁";
-}
-
 function describe(num){
   if(!effects[num]) return "Ουδέτερο τετράγωνο";
   const e = effects[num];
   if(e.type==="plus") return `➕ Κερδίζεις ${e.value} πόντους`;
   if(e.type==="minus") return `➖ Χάνεις ${e.value} πόντους`;
-  if(e.type==="give") return `🎁 Δίνεις ${e.value} πόντους σε όλους`;
+  if(e.type==="give") return `🎁 Δίνεις ${e.value} πόντους σε όλους τους αντιπάλους`;
 }
 
 let timer=null;
@@ -139,10 +133,11 @@ for(let r=9;r>=0;r--){
     const cell = document.createElement("div");
     cell.className="cell";
     cell.style.background=colorFor(num);
-    cell.textContent = iconFor(num); // μόνο το εικονίδιο
+    cell.style.color = (num%10<5) ? "#000" : "#fff";
+    cell.textContent = num; // ΦΑΙΝΕΤΑΙ Ο ΑΡΙΘΜΟΣ
 
     cell.onclick=()=>{
-      showOverlay(describe(num));
+      showOverlay(describe(num)); // ΜΟΝΟ Η ΕΝΕΡΓΕΙΑ
     };
 
     board.appendChild(cell);
