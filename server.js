@@ -8,8 +8,8 @@ const io = new Server(server);
 
 app.use(express.static("public"));
 
-let takenTokens = [];
 let players = [];
+let takenTokens = [];
 
 io.on("connection", (socket) => {
 
@@ -17,7 +17,7 @@ io.on("connection", (socket) => {
     if (takenTokens.includes(data.token)) return;
 
     takenTokens.push(data.token);
-    players.push({ ...data, score: 0 });
+    players.push({ name: data.name, token: data.token, score: 0 });
 
     io.emit("updatePlayers", players);
     io.emit("updateTokens", takenTokens);
@@ -25,6 +25,7 @@ io.on("connection", (socket) => {
 
 });
 
-server.listen(3000, () => {
-  console.log("Server running on http://localhost:3000");
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => {
+  console.log("Server running on port " + PORT);
 });
