@@ -2,19 +2,50 @@
 <html lang="el">
 <head>
 <meta charset="UTF-8">
-<link rel="stylesheet" href="style.css">
-<title>Board</title>
+<title>TEST BOARD</title>
+<style>
+body{
+  margin:0;
+  background:#111;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  height:100vh;
+}
+.board{
+  display:grid;
+  grid-template-columns:repeat(10,60px);
+  grid-template-rows:repeat(10,60px);
+  gap:4px;
+}
+.cell{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  font-weight:bold;
+  border-radius:6px;
+  color:#000;
+}
+</style>
 </head>
 <body>
 
-<div id="players"></div>
-<div id="board"></div>
+<div class="board" id="board"></div>
 
-<div id="qr">
-  <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=http://YOUR_IP:3000/join.html">
-</div>
+<script>
+function colorFor(i){
+  const hue = Math.floor((i-1)*(360/100));
+  return `hsl(${hue},80%,50%)`;
+}
 
-<script src="/socket.io/socket.io.js"></script>
-<script src="app.js"></script>
+for(let i=1;i<=100;i++){
+  const d=document.createElement("div");
+  d.className="cell";
+  d.style.background=colorFor(i);
+  d.textContent=i;
+  board.appendChild(d);
+}
+</script>
+
 </body>
 </html>
