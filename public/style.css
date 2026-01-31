@@ -1,0 +1,11 @@
+body{
+  background:#111;
+  color:#fff;
+  font-family:Arial;
+  text-align:center;
+}
+#tokens div{
+  font-size:40px;
+  margin:10px;
+  cursor:pointer;
+}
