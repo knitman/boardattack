@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="el">
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<h2>Διάλεξε πιόνι</h2>
+<div id="tokens"></div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script>
+const socket = io();
+
+const tokens=["🐶","🐱","🐭","🐹","🐰","🦊","🐻","🐼","🐸","🐵"];
+const div=document.getElementById("tokens");
+
+tokens.forEach(t=>{
+  const d=document.createElement("div");
+  d.textContent=t;
+  d.onclick=()=>{
+    const name=prompt("Όνομα:");
+    socket.emit("joinPlayer",{name,token:t});
+  }
+  div.appendChild(d);
+});
+
+socket.on("updateTokens",(taken)=>{
+  [...div.children].forEach(el=>{
+    if(taken.includes(el.textContent)){
+      el.textContent+=" 🔒";
+      el.style.pointerEvents="none";
+    }
+  });
+});
+</script>
+</body>
+</html>
