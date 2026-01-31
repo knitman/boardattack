@@ -2,17 +2,23 @@
 <html lang="el">
 <head>
 <meta charset="UTF-8">
-<title>TEST BOARD</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Board 1–100</title>
+
 <style>
 body{
   margin:0;
   background:#111;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  height:100vh;
+  font-family:Arial, Helvetica, sans-serif;
+  overflow:hidden;
 }
+
+/* BOARD */
 .board{
+  position:absolute;
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-50%);
   display:grid;
   grid-template-columns:repeat(10,60px);
   grid-template-rows:repeat(10,60px);
@@ -22,9 +28,37 @@ body{
   display:flex;
   justify-content:center;
   align-items:center;
+  border-radius:8px;
   font-weight:bold;
-  border-radius:6px;
-  color:#000;
+  cursor:pointer;
+  user-select:none;
+}
+
+/* OVERLAY */
+#overlay{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.85);
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  opacity:0;
+  pointer-events:none;
+  transition:.25s;
+}
+#overlay.show{
+  opacity:1;
+  pointer-events:auto;
+}
+#overlayBox{
+  background:#000;
+  color:#fff;
+  border:3px solid #fff;
+  border-radius:16px;
+  padding:40px 60px;
+  font-size:34px;
+  text-align:center;
+  max-width:80%;
 }
 </style>
 </head>
@@ -32,18 +66,81 @@ body{
 
 <div class="board" id="board"></div>
 
+<div id="overlay">
+  <div id="overlayBox"></div>
+</div>
+
 <script>
+// ===== EFFECTS MAPPING (αυτό που συμφωνήσαμε) =====
+const effects = {
+  3:{type:"plus",value:5},8:{type:"plus",value:8},12:{type:"plus",value:5},17:{type:"plus",value:10},
+  21:{type:"plus",value:8},26:{type:"plus",value:10},29:{type:"plus",value:12},34:{type:"plus",value:8},
+  38:{type:"plus",value:12},42:{type:"plus",value:10},47:{type:"plus",value:12},52:{type:"plus",value:10},
+  57:{type:"plus",value:15},61:{type:"plus",value:12},66:{type:"plus",value:10},69:{type:"plus",value:15},
+  73:{type:"plus",value:12},78:{type:"plus",value:10},82:{type:"plus",value:15},86:{type:"plus",value:12},
+  90:{type:"plus",value:10},93:{type:"plus",value:15},96:{type:"plus",value:12},98:{type:"plus",value:10},
+  100:{type:"plus",value:15},
+
+  6:{type:"minus",value:5},11:{type:"minus",value:8},15:{type:"minus",value:5},19:{type:"minus",value:10},
+  24:{type:"minus",value:8},28:{type:"minus",value:12},33:{type:"minus",value:10},37:{type:"minus",value:8},
+  41:{type:"minus",value:12},46:{type:"minus",value:10},51:{type:"minus",value:15},56:{type:"minus",value:12},
+  60:{type:"minus",value:10},64:{type:"minus",value:15},68:{type:"minus",value:12},72:{type:"minus",value:10},
+  77:{type:"minus",value:15},83:{type:"minus",value:12},88:{type:"minus",value:10},95:{type:"minus",value:15},
+
+  9:{type:"give",value:5},14:{type:"give",value:8},23:{type:"give",value:10},31:{type:"give",value:8},
+  36:{type:"give",value:12},44:{type:"give",value:10},49:{type:"give",value:12},54:{type:"give",value:10},
+  59:{type:"give",value:15},67:{type:"give",value:12},71:{type:"give",value:10},79:{type:"give",value:15},
+  85:{type:"give",value:12},92:{type:"give",value:15},99:{type:"give",value:10},
+};
+
+// ===== HELPERS =====
+const board = document.getElementById("board");
+const overlay = document.getElementById("overlay");
+const overlayBox = document.getElementById("overlayBox");
+
 function colorFor(i){
   const hue = Math.floor((i-1)*(360/100));
-  return `hsl(${hue},80%,50%)`;
+  const light = 45 + ((i % 10) * 3);
+  return `hsl(${hue},80%,${light}%)`;
 }
 
-for(let i=1;i<=100;i++){
-  const d=document.createElement("div");
-  d.className="cell";
-  d.style.background=colorFor(i);
-  d.textContent=i;
-  board.appendChild(d);
+function snakeNumber(row,col){
+  const base = row*10;
+  return (row%2===0)? base+col+1 : base+(10-col);
+}
+
+function describe(num){
+  if(!effects[num]) return "Ουδέτερο τετράγωνο";
+  const e = effects[num];
+  if(e.type==="plus") return `➕ Κερδίζεις ${e.value} πόντους`;
+  if(e.type==="minus") return `➖ Χάνεις ${e.value} πόντους`;
+  if(e.type==="give") return `🎁 Δίνεις ${e.value} πόντους σε όλους τους αντιπάλους`;
+}
+
+let timer=null;
+function showOverlay(text){
+  overlayBox.textContent = text;
+  overlay.classList.add("show");
+  clearTimeout(timer);
+  timer=setTimeout(()=>overlay.classList.remove("show"),4000);
+}
+
+// ===== BUILD BOARD (snake) =====
+for(let r=9;r>=0;r--){
+  for(let c=0;c<10;c++){
+    const num = snakeNumber(r,c);
+    const cell = document.createElement("div");
+    cell.className="cell";
+    cell.style.background=colorFor(num);
+    cell.style.color = (num%10<5) ? "#000" : "#fff";
+    cell.textContent=num;
+
+    cell.onclick=()=>{
+      showOverlay(`Τετράγωνο ${num}\n${describe(num)}`);
+    };
+
+    board.appendChild(cell);
+  }
 }
 </script>
 
