@@ -20,10 +20,7 @@ body{margin:0;background:#111;color:white;font-family:Arial;}
   position:relative;font-size:18px;
 }
 .tokenOnBoard{
-  position:absolute;
-  bottom:2px;
-  right:4px;
-  font-size:28px;
+  position:absolute;bottom:2px;right:4px;font-size:28px;
 }
 #players{position:absolute;left:20px;top:20px;}
 #qrBox{position:absolute;right:20px;top:20px;}
@@ -38,6 +35,11 @@ body{margin:0;background:#111;color:white;font-family:Arial;}
   background:#000;border:3px solid #fff;
   padding:40px 60px;border-radius:16px;font-size:32px;
 }
+button{
+  margin-top:8px;
+  font-size:16px;
+  padding:6px 12px;
+}
 </style>
 </head>
 <body>
@@ -45,10 +47,15 @@ body{margin:0;background:#111;color:white;font-family:Arial;}
 <div id="players">
   <h3>Παίκτες</h3>
 
-  <div style="margin-top:10px;">
+  <div id="scoreSetup" style="margin-top:10px;">
     Πόντοι Νίκης:
     <input type="number" id="targetInput" value="50" style="width:60px;">
     <button onclick="setTarget()">Ορισμός</button>
+  </div>
+
+  <div id="gameControls" style="display:none; margin-top:10px;">
+    <button onclick="startGame()">▶️ Start</button>
+    <button onclick="restartGame()">🔁 Restart</button>
   </div>
 </div>
 
@@ -68,12 +75,28 @@ const playersDiv = document.getElementById("players");
 const overlay = document.getElementById("overlay");
 const overlayBox = document.getElementById("overlayBox");
 
+const scoreSetup = document.getElementById("scoreSetup");
+const gameControls = document.getElementById("gameControls");
+
 function setTarget(){
   const val = parseInt(document.getElementById("targetInput").value);
   socket.emit("setTargetScore", val);
+
+  scoreSetup.style.display = "none";
+  gameControls.style.display = "block";
 }
 
-// ===== BUILD SNAKE BOARD =====
+function startGame(){
+  overlayBox.textContent="Το παιχνίδι ξεκινά!";
+  overlay.classList.add("show");
+  setTimeout(()=>overlay.classList.remove("show"),2000);
+}
+
+function restartGame(){
+  location.reload();
+}
+
+// ===== BUILD BOARD =====
 const cellMap = {};
 
 function colorFor(i){
@@ -97,15 +120,12 @@ for(let r=9;r>=0;r--){
   }
 }
 
-// ===== PLAYERS / SCORES =====
+// ===== PLAYERS =====
 socket.on("updatePlayers",(players)=>{
   playersDiv.innerHTML = `
     <h3>Παίκτες</h3>
-    <div style="margin-top:10px;">
-      Πόντοι Νίκης:
-      <input type="number" id="targetInput" value="50" style="width:60px;">
-      <button onclick="setTarget()">Ορισμός</button>
-    </div>
+    <div id="scoreSetup" style="margin-top:10px; display:none;"></div>
+    <div id="gameControls" style="margin-top:10px;"></div>
   `;
 
   players.forEach(p=>{
