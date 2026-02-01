@@ -61,9 +61,33 @@ body{
   text-align:center;
   max-width:80%;
 }
+
+/* PLAYERS */
+#players{
+  position:absolute;
+  left:20px;
+  top:20px;
+  color:#fff;
+}
+
+/* QR */
+#qrBox{
+  position:absolute;
+  right:20px;
+  top:20px;
+  text-align:center;
+  color:#fff;
+}
 </style>
 </head>
 <body>
+
+<div id="players"></div>
+
+<div id="qrBox">
+  <div>Scan to join</div>
+  <img src="/qr" width="140">
+</div>
 
 <div class="board" id="board"></div>
 
@@ -71,8 +95,21 @@ body{
   <div id="overlayBox"></div>
 </div>
 
+<script src="/socket.io/socket.io.js"></script>
 <script>
-// ===== EFFECTS =====
+const socket = io();
+const playersDiv = document.getElementById("players");
+
+socket.on("updatePlayers",(players)=>{
+  playersDiv.innerHTML="<h3>Παίκτες</h3>";
+  players.forEach(p=>{
+    const d=document.createElement("div");
+    d.textContent=`${p.token} ${p.name} — ${p.score}`;
+    playersDiv.appendChild(d);
+  });
+});
+
+// ===== EFFECTS (Version 1.0) =====
 const effects = {
   3:{type:"plus",value:5},8:{type:"plus",value:8},12:{type:"plus",value:5},17:{type:"plus",value:10},
   21:{type:"plus",value:8},26:{type:"plus",value:10},29:{type:"plus",value:12},34:{type:"plus",value:8},
@@ -94,7 +131,6 @@ const effects = {
   85:{type:"give",value:12},92:{type:"give",value:15},99:{type:"give",value:10},
 };
 
-// ===== HELPERS =====
 const board = document.getElementById("board");
 const overlay = document.getElementById("overlay");
 const overlayBox = document.getElementById("overlayBox");
@@ -104,46 +140,35 @@ function colorFor(i){
   const light = 45 + ((i % 10) * 3);
   return `hsl(${hue},80%,${light}%)`;
 }
-
-function snakeNumber(row,col){
-  const base = row*10;
-  return (row%2===0)? base+col+1 : base+(10-col);
+function snakeNumber(r,c){
+  const b=r*10;
+  return (r%2===0)?b+c+1:b+(10-c);
 }
-
 function describe(num){
   if(!effects[num]) return "Ουδέτερο τετράγωνο";
-  const e = effects[num];
+  const e=effects[num];
   if(e.type==="plus") return `➕ Κερδίζεις ${e.value} πόντους`;
   if(e.type==="minus") return `➖ Χάνεις ${e.value} πόντους`;
-  if(e.type==="give") return `🎁 Δίνεις ${e.value} πόντους σε όλους τους αντιπάλους`;
+  if(e.type==="give") return `🎁 Δίνεις ${e.value} πόντους σε όλους`;
 }
-
-let timer=null;
 function showOverlay(text){
-  overlayBox.textContent = text;
+  overlayBox.textContent=text;
   overlay.classList.add("show");
-  clearTimeout(timer);
-  timer=setTimeout(()=>overlay.classList.remove("show"),4000);
+  setTimeout(()=>overlay.classList.remove("show"),4000);
 }
 
-// ===== BUILD BOARD =====
 for(let r=9;r>=0;r--){
   for(let c=0;c<10;c++){
-    const num = snakeNumber(r,c);
-    const cell = document.createElement("div");
+    const num=snakeNumber(r,c);
+    const cell=document.createElement("div");
     cell.className="cell";
     cell.style.background=colorFor(num);
-    cell.style.color = (num%10<5) ? "#000" : "#fff";
-    cell.textContent = num; // ΦΑΙΝΕΤΑΙ Ο ΑΡΙΘΜΟΣ
-
-    cell.onclick=()=>{
-      showOverlay(describe(num)); // ΜΟΝΟ Η ΕΝΕΡΓΕΙΑ
-    };
-
+    cell.style.color=(num%10<5)?"#000":"#fff";
+    cell.textContent=num;
+    cell.onclick=()=>showOverlay(describe(num));
     board.appendChild(cell);
   }
 }
 </script>
-
 </body>
 </html>
