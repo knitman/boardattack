@@ -6,6 +6,8 @@
 
 <style>
 body{margin:0;background:#111;color:white;font-family:Arial;}
+
+/* BOARD */
 .board{
   position:absolute;left:50%;top:50%;
   transform:translate(-50%,-50%);
@@ -22,8 +24,36 @@ body{margin:0;background:#111;color:white;font-family:Arial;}
 .tokenOnBoard{
   position:absolute;bottom:2px;right:4px;font-size:28px;
 }
-#players{position:absolute;left:20px;top:20px;}
+
+/* LEFT PANEL */
+#panel{
+  position:absolute;
+  left:20px;
+  top:20px;
+  width:220px;
+}
+
+#controls{
+  background:#000;
+  padding:10px;
+  border:2px solid #fff;
+  border-radius:10px;
+  margin-bottom:10px;
+}
+
+#playersList{
+  background:#000;
+  padding:10px;
+  border:2px solid #fff;
+  border-radius:10px;
+  max-height:260px;
+  overflow-y:auto;
+}
+
+/* QR */
 #qrBox{position:absolute;right:20px;top:20px;}
+
+/* OVERLAY */
 #overlay{
   position:fixed;inset:0;
   background:rgba(0,0,0,.85);
@@ -35,8 +65,9 @@ body{margin:0;background:#111;color:white;font-family:Arial;}
   background:#000;border:3px solid #fff;
   padding:40px 60px;border-radius:16px;font-size:32px;
 }
+
 button{
-  margin-top:8px;
+  margin-top:6px;
   font-size:16px;
   padding:6px 12px;
 }
@@ -44,19 +75,25 @@ button{
 </head>
 <body>
 
-<div id="players">
-  <h3>Παίκτες</h3>
+<div id="panel">
 
-  <div id="scoreSetup" style="margin-top:10px;">
-    Πόντοι Νίκης:
-    <input type="number" id="targetInput" value="50" style="width:60px;">
-    <button onclick="setTarget()">Ορισμός</button>
+  <div id="controls">
+    <div id="scoreSetup">
+      Πόντοι Νίκης:
+      <input type="number" id="targetInput" value="50" style="width:60px;">
+      <button onclick="setTarget()">Ορισμός</button>
+    </div>
+
+    <div id="gameControls" style="display:none;">
+      <button onclick="startGame()">▶️ Start</button>
+      <button onclick="restartGame()">🔁 Restart</button>
+    </div>
   </div>
 
-  <div id="gameControls" style="display:none; margin-top:10px;">
-    <button onclick="startGame()">▶️ Start</button>
-    <button onclick="restartGame()">🔁 Restart</button>
+  <div id="playersList">
+    <b>Παίκτες</b><br>
   </div>
+
 </div>
 
 <div id="qrBox">
@@ -71,19 +108,16 @@ button{
 <script>
 const socket = io();
 const board = document.getElementById("board");
-const playersDiv = document.getElementById("players");
+const playersList = document.getElementById("playersList");
 const overlay = document.getElementById("overlay");
 const overlayBox = document.getElementById("overlayBox");
-
-const scoreSetup = document.getElementById("scoreSetup");
-const gameControls = document.getElementById("gameControls");
 
 function setTarget(){
   const val = parseInt(document.getElementById("targetInput").value);
   socket.emit("setTargetScore", val);
 
-  scoreSetup.style.display = "none";
-  gameControls.style.display = "block";
+  document.getElementById("scoreSetup").style.display="none";
+  document.getElementById("gameControls").style.display="block";
 }
 
 function startGame(){
@@ -122,14 +156,9 @@ for(let r=9;r>=0;r--){
 
 // ===== PLAYERS =====
 socket.on("updatePlayers",(players)=>{
-  playersDiv.innerHTML = `
-    <h3>Παίκτες</h3>
-    <div id="scoreSetup" style="margin-top:10px; display:none;"></div>
-    <div id="gameControls" style="margin-top:10px;"></div>
-  `;
-
+  playersList.innerHTML="<b>Παίκτες</b><br>";
   players.forEach(p=>{
-    playersDiv.innerHTML += `${p.token} ${p.name} — ${p.score}<br>`;
+    playersList.innerHTML+=`${p.token} ${p.name} — ${p.score}<br>`;
   });
 });
 
@@ -146,7 +175,7 @@ socket.on("updatePositions",(players)=>{
   });
 });
 
-// ===== OVERLAY 3s =====
+// ===== OVERLAY =====
 socket.on("showOverlay",(text)=>{
   overlayBox.textContent=text;
   overlay.classList.add("show");
