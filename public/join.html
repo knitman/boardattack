@@ -56,7 +56,9 @@ button{
 <script src="/socket.io/socket.io.js"></script>
 <script>
 const socket = io();
-const mySocketId = socket.id;
+let myId=null;
+
+socket.on("connect",()=> myId=socket.id);
 
 const tokens=["🐶","🐱","🐭","🐹","🐰","🦊","🐻","🐼","🐸","🐵"];
 const container=document.getElementById("tokens");
@@ -65,12 +67,6 @@ const myTokenDiv=document.getElementById("myToken");
 const readyBtn=document.getElementById("readyBtn");
 const dice=document.getElementById("dice");
 const msg=document.getElementById("msg");
-
-let myId=null;
-
-socket.on("connect", ()=>{
-  myId = socket.id;
-});
 
 tokens.forEach(t=>{
   const d=document.createElement("div");
@@ -82,7 +78,6 @@ tokens.forEach(t=>{
     if(!name) return;
 
     socket.emit("joinPlayer",{name,token:t});
-
     container.style.display="none";
     document.querySelector("h2").style.display="none";
     selected.style.display="block";
@@ -92,12 +87,10 @@ tokens.forEach(t=>{
   container.appendChild(d);
 });
 
-readyBtn.onclick=()=>{
-  readyBtn.style.display="none";
-};
+readyBtn.onclick=()=> readyBtn.style.display="none";
 
 socket.on("turnUpdate",(activeId)=>{
-  if(activeId === myId){
+  if(activeId===myId){
     msg.textContent="Η σειρά σου!";
     dice.style.display="block";
   }else{
@@ -106,13 +99,7 @@ socket.on("turnUpdate",(activeId)=>{
   }
 });
 
-dice.onclick=()=>{
-  socket.emit("rollDice");
-};
-
-socket.on("diceResult",(data)=>{
-  msg.textContent=`Ο ${data.player} έφερε ${data.roll}`;
-});
+dice.onclick=()=> socket.emit("rollDice");
 </script>
 </body>
 </html>
