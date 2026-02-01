@@ -2,12 +2,23 @@
 <html lang="el">
 <head>
 <meta charset="UTF-8">
-<title>Board</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Board Game</title>
 
 <style>
-body{margin:0;background:#111;color:white;font-family:Arial;}
+body{
+  margin:0;
+  background:#111;
+  color:white;
+  font-family:Arial, Helvetica, sans-serif;
+  overflow:hidden;
+}
+
+/* BOARD */
 .board{
-  position:absolute;left:50%;top:50%;
+  position:absolute;
+  left:50%;
+  top:50%;
   transform:translate(-50%,-50%);
   display:grid;
   grid-template-columns:repeat(10,60px);
@@ -15,31 +26,77 @@ body{margin:0;background:#111;color:white;font-family:Arial;}
   gap:4px;
 }
 .cell{
-  display:flex;justify-content:center;align-items:center;
-  border-radius:8px;font-weight:bold;
-  position:relative;font-size:18px;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  border-radius:8px;
+  font-weight:bold;
+  position:relative;
+  font-size:18px;
 }
-.tokenOnBoard{position:absolute;bottom:2px;right:4px;font-size:28px;}
-#players{position:absolute;left:20px;top:20px;}
-#qrBox{position:absolute;right:20px;top:20px;}
+
+/* TOKEN */
+.tokenOnBoard{
+  position:absolute;
+  bottom:2px;
+  right:4px;
+  font-size:28px;
+}
+
+/* PANELS */
+#players{
+  position:absolute;
+  left:20px;
+  top:20px;
+}
+#qrBox{
+  position:absolute;
+  right:20px;
+  top:20px;
+  text-align:center;
+}
+
+/* OVERLAY */
 #overlay{
-  position:fixed;inset:0;
+  position:fixed;
+  inset:0;
   background:rgba(0,0,0,.85);
-  display:flex;justify-content:center;align-items:center;
-  opacity:0;pointer-events:none;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  opacity:0;
+  pointer-events:none;
+  transition:.25s;
 }
 #overlay.show{opacity:1;}
 #overlayBox{
-  background:#000;border:3px solid #fff;
-  padding:40px 60px;border-radius:16px;font-size:32px;
+  background:#000;
+  border:3px solid #fff;
+  padding:40px 60px;
+  border-radius:16px;
+  font-size:32px;
 }
 </style>
 </head>
 <body>
 
-<div id="players"></div>
-<div id="qrBox"><img src="/qr" width="140"></div>
+<div id="players">
+  <h3>Παίκτες</h3>
+
+  <div style="margin-top:10px;">
+    Πόντοι Νίκης:
+    <input type="number" id="targetInput" value="50" style="width:60px;">
+    <button onclick="setTarget()">Ορισμός</button>
+  </div>
+</div>
+
+<div id="qrBox">
+  <div>Scan to join</div>
+  <img src="/qr" width="140">
+</div>
+
 <div class="board" id="board"></div>
+
 <div id="overlay"><div id="overlayBox"></div></div>
 
 <script src="/socket.io/socket.io.js"></script>
@@ -50,6 +107,12 @@ const playersDiv = document.getElementById("players");
 const overlay = document.getElementById("overlay");
 const overlayBox = document.getElementById("overlayBox");
 
+function setTarget(){
+  const val = parseInt(document.getElementById("targetInput").value);
+  socket.emit("setTargetScore", val);
+}
+
+// ===== BUILD SNAKE BOARD =====
 const cellMap = {};
 
 function colorFor(i){
@@ -60,7 +123,6 @@ function snake(r,c){
   return (r%2===0)?b+c+1:b+(10-c);
 }
 
-// build board
 for(let r=9;r>=0;r--){
   for(let c=0;c<10;c++){
     const n=snake(r,c);
@@ -74,15 +136,26 @@ for(let r=9;r>=0;r--){
   }
 }
 
+// ===== PLAYERS =====
 socket.on("updatePlayers",(players)=>{
-  playersDiv.innerHTML="<h3>Παίκτες</h3>";
+  playersDiv.innerHTML = `
+    <h3>Παίκτες</h3>
+    <div style="margin-top:10px;">
+      Πόντοι Νίκης:
+      <input type="number" id="targetInput" value="50" style="width:60px;">
+      <button onclick="setTarget()">Ορισμός</button>
+    </div>
+  `;
+
   players.forEach(p=>{
-    playersDiv.innerHTML+=`${p.token} ${p.name} — ${p.score}<br>`;
+    playersDiv.innerHTML += `${p.token} ${p.name} — ${p.score}<br>`;
   });
 });
 
+// ===== TOKENS =====
 socket.on("updatePositions",(players)=>{
   document.querySelectorAll(".tokenOnBoard").forEach(e=>e.remove());
+
   players.forEach(p=>{
     if(p.position>0){
       const t=document.createElement("div");
@@ -93,6 +166,7 @@ socket.on("updatePositions",(players)=>{
   });
 });
 
+// ===== OVERLAY =====
 socket.on("showOverlay",(text)=>{
   overlayBox.textContent=text;
   overlay.classList.add("show");
