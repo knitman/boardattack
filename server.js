@@ -19,10 +19,10 @@ app.use(express.static("public"));
 let players = [];
 let takenTokens = [];
 let turnIndex = 0;
-let targetScore = 50; // default
+let targetScore = 50;
 
 // ===== EFFECTS =====
-const effects = { /* ίδιο mapping όπως πριν */
+const effects = {
   3:{type:"plus",value:5},8:{type:"plus",value:8},12:{type:"plus",value:5},
   17:{type:"plus",value:10},21:{type:"plus",value:8},26:{type:"plus",value:10},
   29:{type:"plus",value:12},34:{type:"plus",value:8},38:{type:"plus",value:12},
@@ -90,24 +90,29 @@ io.on("connection", (socket) => {
     }
 
     let overlayText = `🎲 ${player.name} έφερε ${roll}`;
-    const effect = effects[player.position];
 
+    const effect = effects[player.position];
     if (effect) {
-      if (effect.type === "plus") player.score += effect.value;
-      if (effect.type === "minus") player.score -= effect.value;
+      if (effect.type === "plus") {
+        player.score += effect.value;
+        overlayText += ` | ➕ Κερδίζει ${effect.value} πόντους`;
+      }
+      if (effect.type === "minus") {
+        player.score -= effect.value;
+        overlayText += ` | ➖ Χάνει ${effect.value} πόντους`;
+      }
       if (effect.type === "give") {
         players.forEach(p => {
           if (p.id !== player.id) p.score += effect.value;
         });
+        overlayText += ` | 🎁 Δίνει ${effect.value} πόντους στους άλλους`;
       }
-      overlayText += ` | effect ενεργοποιήθηκε`;
     }
 
     io.emit("updatePlayers", players);
     io.emit("updatePositions", players);
     io.emit("showOverlay", overlayText);
 
-    // ===== CHECK WINNER =====
     if (player.score >= targetScore) {
       io.emit("showOverlay", `🏆 Νικητής ο ${player.name} με ${player.score} πόντους!`);
       return;
