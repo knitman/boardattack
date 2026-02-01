@@ -170,9 +170,10 @@ socket.on("updatePositions",(players)=>{
 socket.on("showOverlay",(text)=>{
   overlayBox.textContent=text;
   overlay.classList.add("show");
-  setTimeout(()=>overlay.classList.remove("show"),3000);
+  setTimeout(()=>overlay.classList.remove("show"),5000);
 });
 </script>
 </body>
 </html>
+
 
