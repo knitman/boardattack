@@ -2,21 +2,12 @@
 <html lang="el">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Board 1–100</title>
+<title>Board</title>
 
 <style>
-body{
-  margin:0;
-  background:#111;
-  font-family:Arial, Helvetica, sans-serif;
-  overflow:hidden;
-  color:white;
-}
+body{margin:0;background:#111;color:white;font-family:Arial;}
 .board{
-  position:absolute;
-  left:50%;
-  top:50%;
+  position:absolute;left:50%;top:50%;
   transform:translate(-50%,-50%);
   display:grid;
   grid-template-columns:repeat(10,60px);
@@ -24,104 +15,88 @@ body{
   gap:4px;
 }
 .cell{
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  border-radius:8px;
-  font-weight:bold;
-  font-size:18px;
-  position:relative;
+  display:flex;justify-content:center;align-items:center;
+  border-radius:8px;font-weight:bold;
+  position:relative;font-size:18px;
 }
-.tokenOnBoard{
-  position:absolute;
-  bottom:2px;
-  right:4px;
-  font-size:28px;
+.tokenOnBoard{position:absolute;bottom:2px;right:4px;font-size:28px;}
+#players{position:absolute;left:20px;top:20px;}
+#qrBox{position:absolute;right:20px;top:20px;}
+#overlay{
+  position:fixed;inset:0;
+  background:rgba(0,0,0,.85);
+  display:flex;justify-content:center;align-items:center;
+  opacity:0;pointer-events:none;
 }
-#players{
-  position:absolute;
-  left:20px;
-  top:20px;
-}
-#qrBox{
-  position:absolute;
-  right:20px;
-  top:20px;
-  text-align:center;
+#overlay.show{opacity:1;}
+#overlayBox{
+  background:#000;border:3px solid #fff;
+  padding:40px 60px;border-radius:16px;font-size:32px;
 }
 </style>
 </head>
 <body>
 
 <div id="players"></div>
-
-<div id="qrBox">
-  <div>Scan to join</div>
-  <img id="qrImg" width="140">
-</div>
-
+<div id="qrBox"><img src="/qr" width="140"></div>
 <div class="board" id="board"></div>
+<div id="overlay"><div id="overlayBox"></div></div>
 
 <script src="/socket.io/socket.io.js"></script>
 <script>
-document.getElementById("qrImg").src="/qr?"+Date.now();
 const socket = io();
-const playersDiv = document.getElementById("players");
 const board = document.getElementById("board");
+const playersDiv = document.getElementById("players");
+const overlay = document.getElementById("overlay");
+const overlayBox = document.getElementById("overlayBox");
 
-// ===== BUILD SNAKE BOARD + MAP =====
-const cellMap = {}; // number -> DOM cell
+const cellMap = {};
 
 function colorFor(i){
-  const hue = Math.floor((i-1)*(360/100));
-  const light = 45 + ((i % 10) * 3);
-  return `hsl(${hue},80%,${light}%)`;
+  return `hsl(${(i-1)*3.6},80%,55%)`;
+}
+function snake(r,c){
+  const b=r*10;
+  return (r%2===0)?b+c+1:b+(10-c);
 }
 
-function snakeNumber(r,c){
-  const base=r*10;
-  return (r%2===0)?base+c+1:base+(10-c);
-}
-
+// build board
 for(let r=9;r>=0;r--){
   for(let c=0;c<10;c++){
-    const num=snakeNumber(r,c);
+    const n=snake(r,c);
     const cell=document.createElement("div");
     cell.className="cell";
-    cell.style.background=colorFor(num);
-    cell.style.color=(num%10<5)?"#000":"#fff";
-    cell.textContent=num;
-
+    cell.style.background=colorFor(n);
+    cell.style.color=(n%10<5)?"#000":"#fff";
+    cell.textContent=n;
     board.appendChild(cell);
-    cellMap[num]=cell;   // ⭐ ΚΡΑΤΑΜΕ ΤΟ ΣΩΣΤΟ MAP
+    cellMap[n]=cell;
   }
 }
 
-// ===== PLAYERS LIST =====
 socket.on("updatePlayers",(players)=>{
   playersDiv.innerHTML="<h3>Παίκτες</h3>";
   players.forEach(p=>{
-    const d=document.createElement("div");
-    d.textContent=`${p.token} ${p.name}`;
-    playersDiv.appendChild(d);
+    playersDiv.innerHTML+=`${p.token} ${p.name} — ${p.score}<br>`;
   });
 });
 
-// ===== TOKENS ON BOARD (FIXED) =====
 socket.on("updatePositions",(players)=>{
   document.querySelectorAll(".tokenOnBoard").forEach(e=>e.remove());
-
   players.forEach(p=>{
-    if(p.position===0) return;
-
-    const targetCell = cellMap[p.position]; // ⭐ σωστό snake cell
-
-    const token = document.createElement("div");
-    token.textContent = p.token;
-    token.className = "tokenOnBoard";
-
-    targetCell.appendChild(token);
+    if(p.position>0){
+      const t=document.createElement("div");
+      t.className="tokenOnBoard";
+      t.textContent=p.token;
+      cellMap[p.position].appendChild(t);
+    }
   });
+});
+
+socket.on("showOverlay",(text)=>{
+  overlayBox.textContent=text;
+  overlay.classList.add("show");
+  setTimeout(()=>overlay.classList.remove("show"),4000);
 });
 </script>
 </body>
