@@ -6,6 +6,7 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
+// QR
 app.get("/qr", (req, res) => {
   const fullUrl = req.protocol + "://" + req.get("host") + "/join.html";
   const qrUrl =
@@ -16,11 +17,39 @@ app.get("/qr", (req, res) => {
 
 app.use(express.static("public"));
 
+// ===== GAME STATE =====
 let players = [];
 let takenTokens = [];
 let turnIndex = 0;
 
-function broadcastTurn() {
+// ===== EFFECTS (Version 1.0 mapping) =====
+const effects = {
+  3:{type:"plus",value:5},8:{type:"plus",value:8},12:{type:"plus",value:5},
+  17:{type:"plus",value:10},21:{type:"plus",value:8},26:{type:"plus",value:10},
+  29:{type:"plus",value:12},34:{type:"plus",value:8},38:{type:"plus",value:12},
+  42:{type:"plus",value:10},47:{type:"plus",value:12},52:{type:"plus",value:10},
+  57:{type:"plus",value:15},61:{type:"plus",value:12},66:{type:"plus",value:10},
+  69:{type:"plus",value:15},73:{type:"plus",value:12},78:{type:"plus",value:10},
+  82:{type:"plus",value:15},86:{type:"plus",value:12},90:{type:"plus",value:10},
+  93:{type:"plus",value:15},96:{type:"plus",value:12},98:{type:"plus",value:10},
+  100:{type:"plus",value:15},
+
+  6:{type:"minus",value:5},11:{type:"minus",value:8},15:{type:"minus",value:5},
+  19:{type:"minus",value:10},24:{type:"minus",value:8},28:{type:"minus",value:12},
+  33:{type:"minus",value:10},37:{type:"minus",value:8},41:{type:"minus",value:12},
+  46:{type:"minus",value:10},51:{type:"minus",value:15},56:{type:"minus",value:12},
+  60:{type:"minus",value:10},64:{type:"minus",value:15},68:{type:"minus",value:12},
+  72:{type:"minus",value:10},77:{type:"minus",value:15},83:{type:"minus",value:12},
+  88:{type:"minus",value:10},95:{type:"minus",value:15},
+
+  9:{type:"give",value:5},14:{type:"give",value:8},23:{type:"give",value:10},
+  31:{type:"give",value:8},36:{type:"give",value:12},44:{type:"give",value:10},
+  49:{type:"give",value:12},54:{type:"give",value:10},59:{type:"give",value:15},
+  67:{type:"give",value:12},71:{type:"give",value:10},79:{type:"give",value:15},
+  85:{type:"give",value:12},92:{type:"give",value:15},99:{type:"give",value:10},
+};
+
+function broadcastTurn(){
   io.emit("turnUpdate", players[turnIndex].id);
 }
 
@@ -42,9 +71,7 @@ io.on("connection", (socket) => {
     io.emit("updatePlayers", players);
     io.emit("updateTokens", takenTokens);
 
-    if (players.length === 1) {
-      broadcastTurn();
-    }
+    if (players.length === 1) broadcastTurn();
   });
 
   socket.on("rollDice", () => {
@@ -60,8 +87,29 @@ io.on("connection", (socket) => {
       if (player.position > 100) player.position = 100;
     }
 
-    io.emit("diceResult", { player: player.name, roll });
+    let overlayText = `🎲 ${player.name} έφερε ${roll}`;
+
+    const effect = effects[player.position];
+    if (effect) {
+      if (effect.type === "plus") {
+        player.score += effect.value;
+        overlayText += ` | ➕ +${effect.value} πόντοι`;
+      }
+      if (effect.type === "minus") {
+        player.score -= effect.value;
+        overlayText += ` | ➖ -${effect.value} πόντοι`;
+      }
+      if (effect.type === "give") {
+        players.forEach(p => {
+          if (p.id !== player.id) p.score += effect.value;
+        });
+        overlayText += ` | 🎁 δίνει ${effect.value} πόντους στους άλλους`;
+      }
+    }
+
+    io.emit("updatePlayers", players);
     io.emit("updatePositions", players);
+    io.emit("showOverlay", overlayText);
 
     turnIndex = (turnIndex + 1) % players.length;
     broadcastTurn();
