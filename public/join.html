@@ -56,6 +56,8 @@ button{
 <script src="/socket.io/socket.io.js"></script>
 <script>
 const socket = io();
+const mySocketId = socket.id;
+
 const tokens=["🐶","🐱","🐭","🐹","🐰","🦊","🐻","🐼","🐸","🐵"];
 const container=document.getElementById("tokens");
 const selected=document.getElementById("selected");
@@ -64,7 +66,11 @@ const readyBtn=document.getElementById("readyBtn");
 const dice=document.getElementById("dice");
 const msg=document.getElementById("msg");
 
-let myName, myToken;
+let myId=null;
+
+socket.on("connect", ()=>{
+  myId = socket.id;
+});
 
 tokens.forEach(t=>{
   const d=document.createElement("div");
@@ -72,17 +78,15 @@ tokens.forEach(t=>{
   d.textContent=t;
 
   d.onclick=()=>{
-    myName=prompt("Όνομα παίκτη:");
-    if(!myName) return;
+    const name=prompt("Όνομα παίκτη:");
+    if(!name) return;
 
-    myToken=t;
-    socket.emit("joinPlayer",{name:myName,token:myToken});
+    socket.emit("joinPlayer",{name,token:t});
 
     container.style.display="none";
     document.querySelector("h2").style.display="none";
-
     selected.style.display="block";
-    myTokenDiv.textContent=myToken;
+    myTokenDiv.textContent=t;
   };
 
   container.appendChild(d);
@@ -92,15 +96,18 @@ readyBtn.onclick=()=>{
   readyBtn.style.display="none";
 };
 
-socket.on("yourTurn", ()=>{
-  msg.textContent="Η σειρά σου!";
-  dice.style.display="block";
+socket.on("turnUpdate",(activeId)=>{
+  if(activeId === myId){
+    msg.textContent="Η σειρά σου!";
+    dice.style.display="block";
+  }else{
+    msg.textContent="Περίμενε τη σειρά σου";
+    dice.style.display="none";
+  }
 });
 
 dice.onclick=()=>{
   socket.emit("rollDice");
-  dice.style.display="none";
-  msg.textContent="Περίμενε τη σειρά σου";
 };
 
 socket.on("diceResult",(data)=>{
