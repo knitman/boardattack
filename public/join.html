@@ -2,22 +2,48 @@
 <html lang="el">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Join</title>
+
 <style>
 body{
+  margin:0;
   background:#111;
   color:#fff;
+  font-family:Arial, Helvetica, sans-serif;
   text-align:center;
-  font-family:Arial;
 }
+
+h2{
+  margin-top:30px;
+}
+
+/* GRID 4άδες */
+#tokens{
+  display:grid;
+  grid-template-columns:repeat(4, 1fr);
+  gap:25px;
+  padding:30px;
+  max-width:600px;
+  margin:auto;
+}
+
+/* ΠΙΟΝΙΑ */
 .token{
-  font-size:50px;
-  margin:15px;
+  font-size:90px;       /* ΔΙΠΛΑΣΙΟ ΜΕΓΕΘΟΣ */
   cursor:pointer;
+  transition:.2s;
+  user-select:none;
 }
+
+.token:hover{
+  transform:scale(1.15);
+}
+
 .locked{
-  opacity:0.3;
+  opacity:0.25;
   pointer-events:none;
+  filter:grayscale(100%);
 }
 </style>
 </head>
@@ -36,11 +62,13 @@ tokens.forEach(t=>{
   const d=document.createElement("div");
   d.className="token";
   d.textContent=t;
+
   d.onclick=()=>{
     const name=prompt("Όνομα παίκτη:");
     if(!name) return;
     socket.emit("joinPlayer",{name,token:t});
   };
+
   container.appendChild(d);
 });
 
@@ -48,6 +76,7 @@ socket.on("updateTokens",(taken)=>{
   [...container.children].forEach(el=>{
     if(taken.includes(el.textContent)){
       el.classList.add("locked");
+      el.textContent = el.textContent + " 🔒";
     }
   });
 });
