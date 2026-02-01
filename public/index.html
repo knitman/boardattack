@@ -49,7 +49,6 @@ body{
 }
 #overlay.show{
   opacity:1;
-  pointer-events:auto;
 }
 #overlayBox{
   background:#000;
@@ -86,7 +85,7 @@ body{
 
 <div id="qrBox">
   <div>Scan to join</div>
-  <img src="/qr" width="140">
+  <img id="qrImg" width="140">
 </div>
 
 <div class="board" id="board"></div>
@@ -97,6 +96,10 @@ body{
 
 <script src="/socket.io/socket.io.js"></script>
 <script>
+// ===== QR (NO CACHE) =====
+document.getElementById("qrImg").src = "/qr?" + Date.now();
+
+// ===== SOCKET PLAYERS =====
 const socket = io();
 const playersDiv = document.getElementById("players");
 
@@ -170,5 +173,6 @@ for(let r=9;r>=0;r--){
   }
 }
 </script>
+
 </body>
 </html>
