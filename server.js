@@ -8,7 +8,9 @@ const io = new Server(server);
 
 app.get("/qr", (req, res) => {
   const fullUrl = req.protocol + "://" + req.get("host") + "/join.html";
-  const qrUrl = "https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=" + encodeURIComponent(fullUrl);
+  const qrUrl =
+    "https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=" +
+    encodeURIComponent(fullUrl);
   res.redirect(qrUrl);
 });
 
@@ -16,17 +18,41 @@ app.use(express.static("public"));
 
 let players = [];
 let takenTokens = [];
+let turnIndex = 0;
 
 io.on("connection", (socket) => {
+
   socket.on("joinPlayer", (data) => {
     if (takenTokens.includes(data.token)) return;
 
     takenTokens.push(data.token);
-    players.push({ name: data.name, token: data.token, score: 0 });
+
+    players.push({
+      id: socket.id,
+      name: data.name,
+      token: data.token,
+      score: 0
+    });
 
     io.emit("updatePlayers", players);
     io.emit("updateTokens", takenTokens);
+
+    if (players.length === 1) {
+      io.to(players[0].id).emit("yourTurn");
+    }
   });
+
+  socket.on("rollDice", () => {
+    if (players[turnIndex].id !== socket.id) return;
+
+    const roll = Math.floor(Math.random() * 6) + 1;
+    io.emit("diceResult", { player: players[turnIndex].name, roll });
+
+    // επόμενος παίκτης
+    turnIndex = (turnIndex + 1) % players.length;
+    io.to(players[turnIndex].id).emit("yourTurn");
+  });
+
 });
 
 const PORT = process.env.PORT || 3000;
