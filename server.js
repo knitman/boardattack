@@ -17,7 +17,11 @@ io.on("connection", (socket) => {
     if (takenTokens.includes(data.token)) return;
 
     takenTokens.push(data.token);
-    players.push({ name: data.name, token: data.token, score: 0 });
+    players.push({
+      name: data.name,
+      token: data.token,
+      score: 0
+    });
 
     io.emit("updatePlayers", players);
     io.emit("updateTokens", takenTokens);
@@ -26,6 +30,4 @@ io.on("connection", (socket) => {
 });
 
 const PORT = process.env.PORT || 3000;
-server.listen(PORT, () => {
-  console.log("Server running on port " + PORT);
-});
+server.listen(PORT);
