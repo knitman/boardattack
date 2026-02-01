@@ -13,8 +13,6 @@ body{
   overflow:hidden;
   color:white;
 }
-
-/* BOARD */
 .board{
   position:absolute;
   left:50%;
@@ -25,28 +23,32 @@ body{
   grid-template-rows:repeat(10,60px);
   gap:4px;
 }
-
-/* PLAYERS PANEL */
+.cell{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  border-radius:8px;
+  font-weight:bold;
+  font-size:18px;
+  position:relative;
+}
+.tokenOnBoard{
+  position:absolute;
+  bottom:2px;
+  right:4px;
+  font-size:28px;
+}
 #players{
   position:absolute;
   left:20px;
   top:20px;
 }
-
-#waiting{
-  margin-top:20px;
-  font-size:28px;
-}
-
-/* QR */
 #qrBox{
   position:absolute;
   right:20px;
   top:20px;
   text-align:center;
 }
-
-/* OVERLAY */
 #overlay{
   position:fixed;
   inset:0;
@@ -66,26 +68,11 @@ body{
   padding:40px 60px;
   font-size:34px;
 }
-.cell{
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  border-radius:8px;
-  font-weight:bold;
-  font-size:18px;
-  cursor:pointer;
-}
-.waitingToken{
-  margin:8px 0;
-}
 </style>
 </head>
 <body>
 
-<div id="players">
-  <h3>Παίκτες</h3>
-  <div id="waiting"></div>
-</div>
+<div id="players"></div>
 
 <div id="qrBox">
   <div>Scan to join</div>
@@ -98,48 +85,29 @@ body{
 
 <script src="/socket.io/socket.io.js"></script>
 <script>
-// QR
 document.getElementById("qrImg").src="/qr?"+Date.now();
 
-// SOCKET
-const socket=io();
-const waitingDiv=document.getElementById("waiting");
+const socket = io();
+const playersDiv = document.getElementById("players");
 
 socket.on("updatePlayers",(players)=>{
-  waitingDiv.innerHTML="";
+  playersDiv.innerHTML="<h3>Παίκτες</h3>";
   players.forEach(p=>{
     const d=document.createElement("div");
-    d.className="waitingToken";
     d.textContent=`${p.token} ${p.name}`;
-    waitingDiv.appendChild(d);
+    playersDiv.appendChild(d);
   });
 });
 
-// ===== VERSION 1.0 BOARD =====
-const effects = {/* ίδιο mapping όπως πριν */};
-
+// ===== BOARD =====
 function colorFor(i){
-  const hue=Math.floor((i-1)*(360/100));
-  const light=45+((i%10)*3);
+  const hue = Math.floor((i-1)*(360/100));
+  const light = 45 + ((i % 10) * 3);
   return `hsl(${hue},80%,${light}%)`;
 }
 function snakeNumber(r,c){
   const b=r*10;
   return (r%2===0)?b+c+1:b+(10-c);
-}
-function showOverlay(text){
-  const o=document.getElementById("overlay");
-  const b=document.getElementById("overlayBox");
-  b.textContent=text;
-  o.classList.add("show");
-  setTimeout(()=>o.classList.remove("show"),4000);
-}
-function describe(num){
-  if(!effects[num]) return "Ουδέτερο τετράγωνο";
-  const e=effects[num];
-  if(e.type==="plus") return `➕ Κερδίζεις ${e.value} πόντους`;
-  if(e.type==="minus") return `➖ Χάνεις ${e.value} πόντους`;
-  if(e.type==="give") return `🎁 Δίνεις ${e.value} πόντους σε όλους`;
 }
 
 const board=document.getElementById("board");
@@ -151,10 +119,27 @@ for(let r=9;r>=0;r--){
     cell.style.background=colorFor(num);
     cell.style.color=(num%10<5)?"#000":"#fff";
     cell.textContent=num;
-    cell.onclick=()=>showOverlay(describe(num));
     board.appendChild(cell);
   }
 }
+
+// ===== TOKENS ON BOARD =====
+socket.on("updatePositions",(players)=>{
+  document.querySelectorAll(".tokenOnBoard").forEach(e=>e.remove());
+
+  players.forEach(p=>{
+    if(p.position===0) return;
+
+    const cells = document.querySelectorAll(".cell");
+    const targetCell = cells[p.position-1];
+
+    const token = document.createElement("div");
+    token.textContent = p.token;
+    token.className = "tokenOnBoard";
+
+    targetCell.appendChild(token);
+  });
+});
 </script>
 
 </body>
