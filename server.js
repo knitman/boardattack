@@ -20,6 +20,10 @@ let players = [];
 let takenTokens = [];
 let turnIndex = 0;
 
+function broadcastTurn() {
+  io.emit("turnUpdate", players[turnIndex].id);
+}
+
 io.on("connection", (socket) => {
 
   socket.on("joinPlayer", (data) => {
@@ -38,7 +42,7 @@ io.on("connection", (socket) => {
     io.emit("updateTokens", takenTokens);
 
     if (players.length === 1) {
-      io.to(players[0].id).emit("yourTurn");
+      broadcastTurn();
     }
   });
 
@@ -48,9 +52,8 @@ io.on("connection", (socket) => {
     const roll = Math.floor(Math.random() * 6) + 1;
     io.emit("diceResult", { player: players[turnIndex].name, roll });
 
-    // επόμενος παίκτης
     turnIndex = (turnIndex + 1) % players.length;
-    io.to(players[turnIndex].id).emit("yourTurn");
+    broadcastTurn();
   });
 
 });
