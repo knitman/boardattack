@@ -10,11 +10,9 @@ body{
   margin:0;
   background:#111;
   color:#fff;
-  font-family:Arial, Helvetica, sans-serif;
+  font-family:Arial;
   text-align:center;
 }
-
-/* GRID */
 #tokens{
   display:grid;
   grid-template-columns:repeat(4, 1fr);
@@ -23,42 +21,24 @@ body{
   max-width:600px;
   margin:auto;
 }
-
 .token{
   font-size:50px;
   cursor:pointer;
-  transition:.2s;
 }
-
-.locked{
-  opacity:0.2;
-  pointer-events:none;
-}
-
-/* SELECTED SCREEN */
-#selected{
-  display:none;
-  margin-top:80px;
-}
-
-#myToken{
-  font-size:90px;
-  margin-bottom:30px;
-}
-
+#selected{ display:none; margin-top:80px; }
+#myToken{ font-size:90px; margin-bottom:30px; }
 button{
   font-size:24px;
   padding:15px 40px;
-  border:none;
   border-radius:10px;
-  cursor:pointer;
 }
-
 #dice{
   display:none;
-  font-size:80px;
+  font-size:90px;
   margin-top:40px;
+  cursor:pointer;
 }
+#msg{ margin-top:20px; font-size:22px; }
 </style>
 </head>
 <body>
@@ -70,6 +50,7 @@ button{
   <div id="myToken"></div>
   <button id="readyBtn">Είμαι έτοιμος</button>
   <div id="dice">🎲</div>
+  <div id="msg">Περίμενε τη σειρά σου</div>
 </div>
 
 <script src="/socket.io/socket.io.js"></script>
@@ -81,11 +62,10 @@ const selected=document.getElementById("selected");
 const myTokenDiv=document.getElementById("myToken");
 const readyBtn=document.getElementById("readyBtn");
 const dice=document.getElementById("dice");
+const msg=document.getElementById("msg");
 
-let myToken=null;
-let myName=null;
+let myName, myToken;
 
-// Δημιουργία πιονιών
 tokens.forEach(t=>{
   const d=document.createElement("div");
   d.className="token";
@@ -98,11 +78,9 @@ tokens.forEach(t=>{
     myToken=t;
     socket.emit("joinPlayer",{name:myName,token:myToken});
 
-    // Κρύψε όλα
     container.style.display="none";
     document.querySelector("h2").style.display="none";
 
-    // Δείξε μόνο το δικό του
     selected.style.display="block";
     myTokenDiv.textContent=myToken;
   };
@@ -110,20 +88,24 @@ tokens.forEach(t=>{
   container.appendChild(d);
 });
 
-// Κλείδωμα πιονιών
-socket.on("updateTokens",(taken)=>{
-  [...container.children].forEach(el=>{
-    if(taken.includes(el.textContent)){
-      el.classList.add("locked");
-    }
-  });
-});
-
-// Κουμπί έτοιμος
 readyBtn.onclick=()=>{
   readyBtn.style.display="none";
-  dice.style.display="block";
 };
+
+socket.on("yourTurn", ()=>{
+  msg.textContent="Η σειρά σου!";
+  dice.style.display="block";
+});
+
+dice.onclick=()=>{
+  socket.emit("rollDice");
+  dice.style.display="none";
+  msg.textContent="Περίμενε τη σειρά σου";
+};
+
+socket.on("diceResult",(data)=>{
+  msg.textContent=`Ο ${data.player} έφερε ${data.roll}`;
+});
 </script>
 </body>
 </html>
