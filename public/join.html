@@ -2,7 +2,24 @@
 <html lang="el">
 <head>
 <meta charset="UTF-8">
-<link rel="stylesheet" href="style.css">
+<title>Join</title>
+<style>
+body{
+  background:#111;
+  color:#fff;
+  text-align:center;
+  font-family:Arial;
+}
+.token{
+  font-size:50px;
+  margin:15px;
+  cursor:pointer;
+}
+.locked{
+  opacity:0.3;
+  pointer-events:none;
+}
+</style>
 </head>
 <body>
 
@@ -12,28 +29,29 @@
 <script src="/socket.io/socket.io.js"></script>
 <script>
 const socket = io();
-
 const tokens=["🐶","🐱","🐭","🐹","🐰","🦊","🐻","🐼","🐸","🐵"];
-const div=document.getElementById("tokens");
+const container=document.getElementById("tokens");
 
 tokens.forEach(t=>{
   const d=document.createElement("div");
+  d.className="token";
   d.textContent=t;
   d.onclick=()=>{
-    const name=prompt("Όνομα:");
+    const name=prompt("Όνομα παίκτη:");
+    if(!name) return;
     socket.emit("joinPlayer",{name,token:t});
-  }
-  div.appendChild(d);
+  };
+  container.appendChild(d);
 });
 
 socket.on("updateTokens",(taken)=>{
-  [...div.children].forEach(el=>{
+  [...container.children].forEach(el=>{
     if(taken.includes(el.textContent)){
-      el.textContent+=" 🔒";
-      el.style.pointerEvents="none";
+      el.classList.add("locked");
     }
   });
 });
 </script>
+
 </body>
 </html>
