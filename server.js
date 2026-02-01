@@ -6,7 +6,6 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-// QR
 app.get("/qr", (req, res) => {
   const fullUrl = req.protocol + "://" + req.get("host") + "/join.html";
   const qrUrl =
@@ -17,13 +16,13 @@ app.get("/qr", (req, res) => {
 
 app.use(express.static("public"));
 
-// ===== GAME STATE =====
 let players = [];
 let takenTokens = [];
 let turnIndex = 0;
+let targetScore = 50; // default
 
-// ===== EFFECTS (Version 1.0 mapping) =====
-const effects = {
+// ===== EFFECTS =====
+const effects = { /* ίδιο mapping όπως πριν */
   3:{type:"plus",value:5},8:{type:"plus",value:8},12:{type:"plus",value:5},
   17:{type:"plus",value:10},21:{type:"plus",value:8},26:{type:"plus",value:10},
   29:{type:"plus",value:12},34:{type:"plus",value:8},38:{type:"plus",value:12},
@@ -55,6 +54,10 @@ function broadcastTurn(){
 
 io.on("connection", (socket) => {
 
+  socket.on("setTargetScore", (score)=>{
+    targetScore = score;
+  });
+
   socket.on("joinPlayer", (data) => {
     if (takenTokens.includes(data.token)) return;
 
@@ -80,36 +83,35 @@ io.on("connection", (socket) => {
 
     const roll = Math.floor(Math.random() * 6) + 1;
 
-    if (player.position === 0) {
-      player.position = 1;
-    } else {
+    if (player.position === 0) player.position = 1;
+    else {
       player.position += roll;
       if (player.position > 100) player.position = 100;
     }
 
     let overlayText = `🎲 ${player.name} έφερε ${roll}`;
-
     const effect = effects[player.position];
+
     if (effect) {
-      if (effect.type === "plus") {
-        player.score += effect.value;
-        overlayText += ` | ➕ +${effect.value} πόντοι`;
-      }
-      if (effect.type === "minus") {
-        player.score -= effect.value;
-        overlayText += ` | ➖ -${effect.value} πόντοι`;
-      }
+      if (effect.type === "plus") player.score += effect.value;
+      if (effect.type === "minus") player.score -= effect.value;
       if (effect.type === "give") {
         players.forEach(p => {
           if (p.id !== player.id) p.score += effect.value;
         });
-        overlayText += ` | 🎁 δίνει ${effect.value} πόντους στους άλλους`;
       }
+      overlayText += ` | effect ενεργοποιήθηκε`;
     }
 
     io.emit("updatePlayers", players);
     io.emit("updatePositions", players);
     io.emit("showOverlay", overlayText);
+
+    // ===== CHECK WINNER =====
+    if (player.score >= targetScore) {
+      io.emit("showOverlay", `🏆 Νικητής ο ${player.name} με ${player.score} πόντους!`);
+      return;
+    }
 
     turnIndex = (turnIndex + 1) % players.length;
     broadcastTurn();
