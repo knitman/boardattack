@@ -19,7 +19,12 @@ body{margin:0;background:#111;color:white;font-family:Arial;}
   border-radius:8px;font-weight:bold;
   position:relative;font-size:18px;
 }
-.tokenOnBoard{position:absolute;bottom:2px;right:4px;font-size:28px;}
+.tokenOnBoard{
+  position:absolute;
+  bottom:2px;
+  right:4px;
+  font-size:28px;
+}
 #players{position:absolute;left:20px;top:20px;}
 #qrBox{position:absolute;right:20px;top:20px;}
 #overlay{
@@ -37,9 +42,22 @@ body{margin:0;background:#111;color:white;font-family:Arial;}
 </head>
 <body>
 
-<div id="players"></div>
-<div id="qrBox"><img src="/qr" width="140"></div>
+<div id="players">
+  <h3>Παίκτες</h3>
+
+  <div style="margin-top:10px;">
+    Πόντοι Νίκης:
+    <input type="number" id="targetInput" value="50" style="width:60px;">
+    <button onclick="setTarget()">Ορισμός</button>
+  </div>
+</div>
+
+<div id="qrBox">
+  <img src="/qr" width="140">
+</div>
+
 <div class="board" id="board"></div>
+
 <div id="overlay"><div id="overlayBox"></div></div>
 
 <script src="/socket.io/socket.io.js"></script>
@@ -50,6 +68,12 @@ const playersDiv = document.getElementById("players");
 const overlay = document.getElementById("overlay");
 const overlayBox = document.getElementById("overlayBox");
 
+function setTarget(){
+  const val = parseInt(document.getElementById("targetInput").value);
+  socket.emit("setTargetScore", val);
+}
+
+// ===== BUILD SNAKE BOARD =====
 const cellMap = {};
 
 function colorFor(i){
@@ -73,13 +97,23 @@ for(let r=9;r>=0;r--){
   }
 }
 
+// ===== PLAYERS / SCORES =====
 socket.on("updatePlayers",(players)=>{
-  playersDiv.innerHTML="<h3>Παίκτες</h3>";
+  playersDiv.innerHTML = `
+    <h3>Παίκτες</h3>
+    <div style="margin-top:10px;">
+      Πόντοι Νίκης:
+      <input type="number" id="targetInput" value="50" style="width:60px;">
+      <button onclick="setTarget()">Ορισμός</button>
+    </div>
+  `;
+
   players.forEach(p=>{
-    playersDiv.innerHTML+=`${p.token} ${p.name} — ${p.score}<br>`;
+    playersDiv.innerHTML += `${p.token} ${p.name} — ${p.score}<br>`;
   });
 });
 
+// ===== TOKENS =====
 socket.on("updatePositions",(players)=>{
   document.querySelectorAll(".tokenOnBoard").forEach(e=>e.remove());
   players.forEach(p=>{
@@ -92,10 +126,11 @@ socket.on("updatePositions",(players)=>{
   });
 });
 
+// ===== OVERLAY 3s =====
 socket.on("showOverlay",(text)=>{
   overlayBox.textContent=text;
   overlay.classList.add("show");
-  setTimeout(()=>overlay.classList.remove("show"),5000);
+  setTimeout(()=>overlay.classList.remove("show"),3000);
 });
 </script>
 </body>
