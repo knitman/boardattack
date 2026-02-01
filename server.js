@@ -22,7 +22,7 @@ let turnIndex = 0;
 let targetScore = 50;
 let round = 1;
 
-// ===== FULL EFFECTS MAPPING =====
+// ===== EFFECTS =====
 const effects = {
   3:{type:"plus",value:5},8:{type:"plus",value:8},12:{type:"plus",value:5},
   17:{type:"plus",value:10},21:{type:"plus",value:8},26:{type:"plus",value:10},
@@ -54,6 +54,7 @@ function broadcastTurn(){
     io.emit("turnUpdate", players[turnIndex].id);
 }
 
+// ===== NEXT ROUND WITH COUNTDOWN =====
 function startNextRound(){
   let countdown = 10;
 
@@ -68,7 +69,7 @@ function startNextRound(){
       io.emit("updatePositions", players);
 
       round++;
-      broadcastTurn();
+      setTimeout(broadcastTurn, 500);
     }
   },1000);
 }
@@ -116,17 +117,17 @@ io.on("connection", (socket) => {
     if (effect) {
       if (effect.type === "plus") {
         player.score += effect.value;
-        overlayText += ` | ➕ Κερδίζει ${effect.value} πόντους`;
+        overlayText += ` | ➕ Κερδίζει ${effect.value}`;
       }
       if (effect.type === "minus") {
         player.score -= effect.value;
-        overlayText += ` | ➖ Χάνει ${effect.value} πόντους`;
+        overlayText += ` | ➖ Χάνει ${effect.value}`;
       }
       if (effect.type === "give") {
         players.forEach(p => {
           if (p.id !== player.id) p.score += effect.value;
         });
-        overlayText += ` | 🎁 Δίνει ${effect.value} πόντους στους άλλους`;
+        overlayText += ` | 🎁 Δίνει ${effect.value} στους άλλους`;
       }
     }
 
@@ -134,18 +135,24 @@ io.on("connection", (socket) => {
     io.emit("updatePositions", players);
     io.emit("showOverlay", overlayText);
 
+    // ===== REACHED 100 → NEXT ROUND =====
     if (player.position === 100) {
-      startNextRound();
+      setTimeout(startNextRound, 3000);
       return;
     }
 
+    // ===== WIN BY SCORE =====
     if (player.score >= targetScore) {
-      io.emit("showOverlay", `🏆 Νικητής ο ${player.name}!`);
+      setTimeout(()=>{
+        io.emit("showOverlay", `🏆 Νικητής ο ${player.name} με ${player.score} πόντους!`);
+      },3000);
       return;
     }
 
     turnIndex = (turnIndex + 1) % players.length;
-    broadcastTurn();
+
+    // wait overlay 3s before next turn
+    setTimeout(broadcastTurn, 3000);
   });
 
 });
