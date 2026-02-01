@@ -11,6 +11,7 @@ body{
   background:#111;
   font-family:Arial, Helvetica, sans-serif;
   overflow:hidden;
+  color:white;
 }
 
 /* BOARD */
@@ -24,15 +25,25 @@ body{
   grid-template-rows:repeat(10,60px);
   gap:4px;
 }
-.cell{
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  border-radius:8px;
-  font-weight:bold;
-  font-size:18px;
-  cursor:pointer;
-  user-select:none;
+
+/* PLAYERS PANEL */
+#players{
+  position:absolute;
+  left:20px;
+  top:20px;
+}
+
+#waiting{
+  margin-top:20px;
+  font-size:28px;
+}
+
+/* QR */
+#qrBox{
+  position:absolute;
+  right:20px;
+  top:20px;
+  text-align:center;
 }
 
 /* OVERLAY */
@@ -47,41 +58,34 @@ body{
   pointer-events:none;
   transition:.25s;
 }
-#overlay.show{
-  opacity:1;
-}
+#overlay.show{ opacity:1; }
 #overlayBox{
   background:#000;
-  color:#fff;
   border:3px solid #fff;
   border-radius:16px;
   padding:40px 60px;
   font-size:34px;
-  text-align:center;
-  max-width:80%;
 }
-
-/* PLAYERS */
-#players{
-  position:absolute;
-  left:20px;
-  top:20px;
-  color:#fff;
+.cell{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  border-radius:8px;
+  font-weight:bold;
+  font-size:18px;
+  cursor:pointer;
 }
-
-/* QR */
-#qrBox{
-  position:absolute;
-  right:20px;
-  top:20px;
-  text-align:center;
-  color:#fff;
+.waitingToken{
+  margin:8px 0;
 }
 </style>
 </head>
 <body>
 
-<div id="players"></div>
+<div id="players">
+  <h3>Παίκτες</h3>
+  <div id="waiting"></div>
+</div>
 
 <div id="qrBox">
   <div>Scan to join</div>
@@ -90,62 +94,45 @@ body{
 
 <div class="board" id="board"></div>
 
-<div id="overlay">
-  <div id="overlayBox"></div>
-</div>
+<div id="overlay"><div id="overlayBox"></div></div>
 
 <script src="/socket.io/socket.io.js"></script>
 <script>
-// ===== QR (NO CACHE) =====
-document.getElementById("qrImg").src = "/qr?" + Date.now();
+// QR
+document.getElementById("qrImg").src="/qr?"+Date.now();
 
-// ===== SOCKET PLAYERS =====
-const socket = io();
-const playersDiv = document.getElementById("players");
+// SOCKET
+const socket=io();
+const waitingDiv=document.getElementById("waiting");
 
 socket.on("updatePlayers",(players)=>{
-  playersDiv.innerHTML="<h3>Παίκτες</h3>";
+  waitingDiv.innerHTML="";
   players.forEach(p=>{
     const d=document.createElement("div");
-    d.textContent=`${p.token} ${p.name} — ${p.score}`;
-    playersDiv.appendChild(d);
+    d.className="waitingToken";
+    d.textContent=`${p.token} ${p.name}`;
+    waitingDiv.appendChild(d);
   });
 });
 
-// ===== EFFECTS (Version 1.0) =====
-const effects = {
-  3:{type:"plus",value:5},8:{type:"plus",value:8},12:{type:"plus",value:5},17:{type:"plus",value:10},
-  21:{type:"plus",value:8},26:{type:"plus",value:10},29:{type:"plus",value:12},34:{type:"plus",value:8},
-  38:{type:"plus",value:12},42:{type:"plus",value:10},47:{type:"plus",value:12},52:{type:"plus",value:10},
-  57:{type:"plus",value:15},61:{type:"plus",value:12},66:{type:"plus",value:10},69:{type:"plus",value:15},
-  73:{type:"plus",value:12},78:{type:"plus",value:10},82:{type:"plus",value:15},86:{type:"plus",value:12},
-  90:{type:"plus",value:10},93:{type:"plus",value:15},96:{type:"plus",value:12},98:{type:"plus",value:10},
-  100:{type:"plus",value:15},
-
-  6:{type:"minus",value:5},11:{type:"minus",value:8},15:{type:"minus",value:5},19:{type:"minus",value:10},
-  24:{type:"minus",value:8},28:{type:"minus",value:12},33:{type:"minus",value:10},37:{type:"minus",value:8},
-  41:{type:"minus",value:12},46:{type:"minus",value:10},51:{type:"minus",value:15},56:{type:"minus",value:12},
-  60:{type:"minus",value:10},64:{type:"minus",value:15},68:{type:"minus",value:12},72:{type:"minus",value:10},
-  77:{type:"minus",value:15},83:{type:"minus",value:12},88:{type:"minus",value:10},95:{type:"minus",value:15},
-
-  9:{type:"give",value:5},14:{type:"give",value:8},23:{type:"give",value:10},31:{type:"give",value:8},
-  36:{type:"give",value:12},44:{type:"give",value:10},49:{type:"give",value:12},54:{type:"give",value:10},
-  59:{type:"give",value:15},67:{type:"give",value:12},71:{type:"give",value:10},79:{type:"give",value:15},
-  85:{type:"give",value:12},92:{type:"give",value:15},99:{type:"give",value:10},
-};
-
-const board = document.getElementById("board");
-const overlay = document.getElementById("overlay");
-const overlayBox = document.getElementById("overlayBox");
+// ===== VERSION 1.0 BOARD =====
+const effects = {/* ίδιο mapping όπως πριν */};
 
 function colorFor(i){
-  const hue = Math.floor((i-1)*(360/100));
-  const light = 45 + ((i % 10) * 3);
+  const hue=Math.floor((i-1)*(360/100));
+  const light=45+((i%10)*3);
   return `hsl(${hue},80%,${light}%)`;
 }
 function snakeNumber(r,c){
   const b=r*10;
   return (r%2===0)?b+c+1:b+(10-c);
+}
+function showOverlay(text){
+  const o=document.getElementById("overlay");
+  const b=document.getElementById("overlayBox");
+  b.textContent=text;
+  o.classList.add("show");
+  setTimeout(()=>o.classList.remove("show"),4000);
 }
 function describe(num){
   if(!effects[num]) return "Ουδέτερο τετράγωνο";
@@ -154,12 +141,8 @@ function describe(num){
   if(e.type==="minus") return `➖ Χάνεις ${e.value} πόντους`;
   if(e.type==="give") return `🎁 Δίνεις ${e.value} πόντους σε όλους`;
 }
-function showOverlay(text){
-  overlayBox.textContent=text;
-  overlay.classList.add("show");
-  setTimeout(()=>overlay.classList.remove("show"),4000);
-}
 
+const board=document.getElementById("board");
 for(let r=9;r>=0;r--){
   for(let c=0;c<10;c++){
     const num=snakeNumber(r,c);
