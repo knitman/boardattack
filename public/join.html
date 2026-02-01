@@ -14,11 +14,7 @@ body{
   text-align:center;
 }
 
-h2{
-  margin-top:30px;
-}
-
-/* GRID 4άδες */
+/* GRID */
 #tokens{
   display:grid;
   grid-template-columns:repeat(4, 1fr);
@@ -28,22 +24,40 @@ h2{
   margin:auto;
 }
 
-/* ΠΙΟΝΙΑ */
 .token{
-  font-size:50px;       /* ΔΙΠΛΑΣΙΟ ΜΕΓΕΘΟΣ */
+  font-size:50px;
   cursor:pointer;
   transition:.2s;
-  user-select:none;
-}
-
-.token:hover{
-  transform:scale(1.15);
 }
 
 .locked{
-  opacity:0.25;
+  opacity:0.2;
   pointer-events:none;
-  filter:grayscale(100%);
+}
+
+/* SELECTED SCREEN */
+#selected{
+  display:none;
+  margin-top:80px;
+}
+
+#myToken{
+  font-size:90px;
+  margin-bottom:30px;
+}
+
+button{
+  font-size:24px;
+  padding:15px 40px;
+  border:none;
+  border-radius:10px;
+  cursor:pointer;
+}
+
+#dice{
+  display:none;
+  font-size:80px;
+  margin-top:40px;
 }
 </style>
 </head>
@@ -52,37 +66,64 @@ h2{
 <h2>Διάλεξε πιόνι</h2>
 <div id="tokens"></div>
 
+<div id="selected">
+  <div id="myToken"></div>
+  <button id="readyBtn">Είμαι έτοιμος</button>
+  <div id="dice">🎲</div>
+</div>
+
 <script src="/socket.io/socket.io.js"></script>
 <script>
 const socket = io();
 const tokens=["🐶","🐱","🐭","🐹","🐰","🦊","🐻","🐼","🐸","🐵"];
 const container=document.getElementById("tokens");
+const selected=document.getElementById("selected");
+const myTokenDiv=document.getElementById("myToken");
+const readyBtn=document.getElementById("readyBtn");
+const dice=document.getElementById("dice");
 
+let myToken=null;
+let myName=null;
+
+// Δημιουργία πιονιών
 tokens.forEach(t=>{
   const d=document.createElement("div");
   d.className="token";
   d.textContent=t;
 
   d.onclick=()=>{
-    const name=prompt("Όνομα παίκτη:");
-    if(!name) return;
-    socket.emit("joinPlayer",{name,token:t});
+    myName=prompt("Όνομα παίκτη:");
+    if(!myName) return;
+
+    myToken=t;
+    socket.emit("joinPlayer",{name:myName,token:myToken});
+
+    // Κρύψε όλα
+    container.style.display="none";
+    document.querySelector("h2").style.display="none";
+
+    // Δείξε μόνο το δικό του
+    selected.style.display="block";
+    myTokenDiv.textContent=myToken;
   };
 
   container.appendChild(d);
 });
 
+// Κλείδωμα πιονιών
 socket.on("updateTokens",(taken)=>{
   [...container.children].forEach(el=>{
     if(taken.includes(el.textContent)){
       el.classList.add("locked");
-      el.textContent = el.textContent + " 🔒";
     }
   });
 });
-</script>
 
+// Κουμπί έτοιμος
+readyBtn.onclick=()=>{
+  readyBtn.style.display="none";
+  dice.style.display="block";
+};
+</script>
 </body>
 </html>
-
-
